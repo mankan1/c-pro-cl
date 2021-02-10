@@ -236,3 +236,10 @@ prom_metric_sample_histogram_t *prom_metric_sample_histogram_from_labels(prom_me
   prom_free((void *)l_value);
   return sample;
 }
+
+// Get current monotonic time in nanoseconds
+unsigned long long prom_get_clock_ns() {
+    struct timespec ts = {0};
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return ts.tv_nsec + 1000000000 * ts.tv_sec;
+}

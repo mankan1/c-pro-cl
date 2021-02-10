@@ -64,4 +64,13 @@ prom_metric_sample_t *prom_metric_sample_from_labels(prom_metric_t *self, const 
 prom_metric_sample_histogram_t *prom_metric_sample_histogram_from_labels(prom_metric_t *self,
                                                                          const char **label_values);
 
+/**
+ * @brief Returns the current monotonic clock in nanoseconds
+ *
+ * You may use this function to time events and report them via the histogram metrics
+ *
+ * @return the current monotonic clock in nanoseconds.
+ */
+unsigned long long prom_get_clock_ns() {
+
 #endif  // PROM_METRIC_H
