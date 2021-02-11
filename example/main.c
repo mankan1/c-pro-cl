@@ -26,8 +26,8 @@
 #include "foo.h"
 #include "bar.h"
 
-
 prom_histogram_t *test_histogram;
+struct MHD_Daemon *prom_daemon;
 
 static void init(void) {
     // Initialize the Default registry
@@ -51,35 +51,27 @@ static void init(void) {
     promhttp_set_active_collector_registry(NULL);
 }
 
-void runme() {
-    K2MX__gauge_register()
+void intHandler(int signal) {
+    printf("\nshutting down...\n");
+    fflush(stdout);
+    prom_collector_registry_destroy(PROM_COLLECTOR_REGISTRY_DEFAULT);
+    MHD_stop_daemon(prom_daemon);
 }
 
 int main(int argc, const char **argv) {
     init();
     const char *labels[] = { "one", "two", "three", "four", "five" };
 
-    struct MHD_Daemon *daemon = promhttp_start_daemon(MHD_USE_INTERNAL_POLLING_THREAD, 8000, NULL, NULL);
-    if (daemon == NULL) {
+    prom_daemon = promhttp_start_daemon(MHD_USE_INTERNAL_POLLING_THREAD, 8000, NULL, NULL);
+    if (prom_daemon == NULL) {
         return 1;
-    }
-
-    int done = 0;
-
-    auto void intHandler(int signal);
-    void intHandler(int signal) {
-        printf("\nshutting down...\n");
-        fflush(stdout);
-        prom_collector_registry_destroy(PROM_COLLECTOR_REGISTRY_DEFAULT);
-        MHD_stop_daemon(daemon);
-        done = 1;
     }
 
     signal(SIGINT, intHandler);
     unsigned long long prev = prom_get_clock_ns();
     int cnt = 0;
     int r = 0;
-    while(done == 0) {
+    while(1) {
         usleep(10*1000);
         unsigned long long now = prom_get_clock_ns();
         unsigned long long elapsed_usec = (now - prev) / 1000;

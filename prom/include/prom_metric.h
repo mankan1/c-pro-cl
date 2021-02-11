@@ -71,6 +71,6 @@ prom_metric_sample_histogram_t *prom_metric_sample_histogram_from_labels(prom_me
  *
  * @return the current monotonic clock in nanoseconds.
  */
-unsigned long long prom_get_clock_ns() {
+unsigned long long prom_get_clock_ns();
 
 #endif  // PROM_METRIC_H
