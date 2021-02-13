@@ -62,7 +62,7 @@ int main(int argc, const char **argv) {
     init();
     const char *labels[] = { "one", "two", "three", "four", "five" };
 
-    prom_daemon = promhttp_start_daemon(MHD_USE_INTERNAL_POLLING_THREAD, 8000, NULL, NULL);
+    prom_daemon = promhttp_start_daemon(MHD_USE_INTERNAL_POLLING_THREAD, 8489, NULL, NULL);
     if (prom_daemon == NULL) {
         return 1;
     }
