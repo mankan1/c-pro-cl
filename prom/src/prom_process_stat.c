@@ -26,7 +26,7 @@
 #include "prom_process_stat_t.h"
 #include "prom_procfs_i.h"
 
-prom_gauge_t *prom_process_cpu_seconds_total;
+prom_counter_t *prom_process_cpu_seconds_total;
 prom_gauge_t *prom_process_virtual_memory_bytes;
 prom_gauge_t *prom_process_resident_memory_bytes;
 prom_gauge_t *prom_process_start_time_seconds;
@@ -179,7 +179,7 @@ int prom_process_stat_destroy(prom_process_stat_t *self) {
 int prom_process_stats_init(void) {
   // /proc/[pid]stat cutime + cstime / 100
   prom_process_cpu_seconds_total =
-      prom_gauge_new("process_cpu_seconds_total", "Total user and system CPU time spent in seconds.", 0, NULL);
+      prom_counter_new("process_cpu_seconds_total", "Total user and system CPU time spent in seconds.", 0, NULL);
 
   // /proc/[pid]/stat Field 23
   prom_process_virtual_memory_bytes =
