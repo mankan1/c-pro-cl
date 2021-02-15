@@ -18,9 +18,10 @@
 #define PROM_PROCESS_STATS_T_H
 
 #include "prom_gauge.h"
+#include "prom_counter.h"
 #include "prom_procfs_t.h"
 
-extern prom_gauge_t *prom_process_cpu_seconds_total;
+extern prom_counter_t *prom_process_cpu_seconds_total;
 extern prom_gauge_t *prom_process_virtual_memory_bytes;
 extern prom_gauge_t *prom_process_resident_memory_bytes;
 extern prom_gauge_t *prom_process_start_time_seconds;
