@@ -70,27 +70,32 @@ void promhttp_stop_push_metrics(promhttp_push_handle_t *handle) {
 promhttp_push_handle_t *
 promhttp_start_push_metrics(const char *url, unsigned long long interval_ms) {
     if (!PROM_ACTIVE_REGISTRY) {
+        fprintf(stderr, "you need to setup the active collector registry with promhttp_set_active_collector_registry()\n");
         return NULL;
     }
 
     promhttp_push_handle_t *res = (promhttp_push_handle_t *)prom_malloc(sizeof(promhttp_push_handle_t));
     if (!res) {
+        fprintf(stderr, "bad_alloc: unable to allocate from promhttp\n");
         return NULL;
     }
     res->interval_us = interval_ms * 1000;
     res->last_posted_ns = 0;
     res->should_run = 1;
-    if (CURLE_OK != curl_global_init(CURL_GLOBAL_ALL)) {
+    int ccode = curl_global_init(CURL_GLOBAL_ALL);
+    if (CURLE_OK != ccode) {
         prom_free(res);
+        fprintf(stderr, "curl_global_init() failed: %s\n", curl_easy_strerror(ccode));
         return NULL;
     }
     res->curl = curl_easy_init();
     if (!res->curl) {
         curl_global_cleanup();
         prom_free(res);
+        fprintf(stderr, "curl_easy_init() failed\n");
         return NULL;
     }
-    int ccode = curl_easy_setopt(res->curl, CURLOPT_URL, url);
+    ccode = curl_easy_setopt(res->curl, CURLOPT_URL, url);
     if (CURLE_OK != ccode) {
         fprintf(stderr, "curl_easy_setopt() failed: %s\n", curl_easy_strerror(ccode));
 
@@ -100,7 +105,7 @@ promhttp_start_push_metrics(const char *url, unsigned long long interval_ms) {
         return NULL;
     }
     if (pthread_create(&res->thread, NULL, promhttp_post_metrics, res)) {
-        perror("pthread create error");
+        perror("pthread create error\n");
         curl_easy_cleanup(res->curl);
         curl_global_cleanup();
         prom_free(res);
