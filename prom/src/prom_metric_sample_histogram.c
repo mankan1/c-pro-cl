@@ -121,8 +121,8 @@ prom_metric_sample_histogram_t *prom_metric_sample_histogram_new(const char *nam
   self->buckets = buckets;
 
   // Allocate and initialize the lock
-  self->rwlock = (pthread_rwlock_t *)prom_malloc(sizeof(pthread_rwlock_t));
-  r = pthread_rwlock_init(self->rwlock, NULL);
+  self->rwlock = (prom_lock_t *)prom_malloc(sizeof(prom_lock_t));
+  r = prom_lock_init(self->rwlock);
   if (r) {
     prom_metric_sample_histogram_destroy(self);
     return NULL;
@@ -291,10 +291,10 @@ int prom_metric_sample_histogram_destroy(prom_metric_sample_histogram_t *self) {
   if (r) ret = r;
   self->metric_formatter = NULL;
 
-  r = pthread_rwlock_destroy(self->rwlock);
+  r = prom_lock_destroy(self->rwlock);
   if (r) ret = r;
 
-  prom_free(self->rwlock);
+  prom_free((void*)self->rwlock);
   self->rwlock = NULL;
 
   prom_free(self);
@@ -319,7 +319,7 @@ void prom_metric_sample_histogram_free_generic(void *gen) {
 int prom_metric_sample_histogram_observe(prom_metric_sample_histogram_t *self, double value) {
   int r = 0;
 
-  r = pthread_rwlock_wrlock(self->rwlock);
+  r = prom_lock_lock(self->rwlock);
   if (r) {
     printf("RETURN CODE: %d\n", r);
     PROM_LOG(PROM_PTHREAD_RWLOCK_LOCK_ERROR);
@@ -328,7 +328,7 @@ int prom_metric_sample_histogram_observe(prom_metric_sample_histogram_t *self, d
 
 #define PROM_METRIC_SAMPLE_HISTOGRAM_OBSERVE_HANDLE_UNLOCK(r) \
   int rr = 0;                                                 \
-  rr = pthread_rwlock_unlock(self->rwlock);                   \
+  rr = prom_lock_unlock(self->rwlock);                   \
   if (rr) {                                                   \
     PROM_LOG(PROM_PTHREAD_RWLOCK_UNLOCK_ERROR);               \
     return rr;                                                \

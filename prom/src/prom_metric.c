@@ -79,8 +79,8 @@ prom_metric_t *prom_metric_new(prom_metric_type_t metric_type, const char *name,
     prom_metric_destroy(self);
     return NULL;
   }
-  self->rwlock = (pthread_rwlock_t *)prom_malloc(sizeof(pthread_rwlock_t));
-  r = pthread_rwlock_init(self->rwlock, NULL);
+  self->lock = (prom_lock_t *)prom_malloc(sizeof(prom_lock_t));
+  r = prom_lock_init(self->lock);
   if (r) {
     PROM_LOG(PROM_PTHREAD_RWLOCK_INIT_ERROR);
     return NULL;
@@ -109,14 +109,14 @@ int prom_metric_destroy(prom_metric_t *self) {
   self->formatter = NULL;
   if (r) ret = r;
 
-  r = pthread_rwlock_destroy(self->rwlock);
+  r = prom_lock_destroy(self->lock);
   if (r) {
     PROM_LOG(PROM_PTHREAD_RWLOCK_DESTROY_ERROR);
     ret = r;
   }
 
-  prom_free(self->rwlock);
-  self->rwlock = NULL;
+  prom_free((void*)self->lock);
+  self->lock = NULL;
 
   for (int i = 0; i < self->label_key_count; i++) {
     prom_free((void *)self->label_keys[i]);
@@ -147,14 +147,14 @@ void prom_metric_free_generic(void *item) {
 prom_metric_sample_t *prom_metric_sample_from_labels(prom_metric_t *self, const char **label_values) {
   PROM_ASSERT(self != NULL);
   int r = 0;
-  r = pthread_rwlock_wrlock(self->rwlock);
+  r = prom_lock_lock(self->lock);
   if (r) {
     PROM_LOG(PROM_PTHREAD_RWLOCK_LOCK_ERROR);
     return NULL;
   }
 
 #define PROM_METRIC_SAMPLE_FROM_LABELS_HANDLE_UNLOCK() \
-  r = pthread_rwlock_unlock(self->rwlock);             \
+  r = prom_lock_unlock(self->lock);             \
   if (r) PROM_LOG(PROM_PTHREAD_RWLOCK_UNLOCK_ERROR);   \
   return NULL;
 
@@ -180,7 +180,7 @@ prom_metric_sample_t *prom_metric_sample_from_labels(prom_metric_t *self, const 
       PROM_METRIC_SAMPLE_FROM_LABELS_HANDLE_UNLOCK();
     }
   }
-  pthread_rwlock_unlock(self->rwlock);
+  prom_lock_unlock(self->lock);
   prom_free((void *)l_value);
   return sample;
 }
@@ -190,14 +190,14 @@ prom_metric_sample_histogram_t *prom_metric_sample_histogram_from_labels(prom_me
   PROM_ASSERT(self != NULL);
 
   int r = 0;
-  r = pthread_rwlock_wrlock(self->rwlock);
+  r = prom_lock_lock(self->lock);
   if (r) {
     PROM_LOG(PROM_PTHREAD_RWLOCK_LOCK_ERROR);
     return NULL;
   }
 
 #define PROM_METRIC_SAMPLE_HISTOGRAM_FROM_LABELS_HANDLE_UNLOCK() \
-  r = pthread_rwlock_unlock(self->rwlock);                       \
+  r = prom_lock_unlock(self->lock);                       \
   if (r) {                                                       \
     PROM_LOG(PROM_PTHREAD_RWLOCK_UNLOCK_ERROR);                  \
     return NULL;                                                 \
@@ -228,11 +228,11 @@ prom_metric_sample_histogram_t *prom_metric_sample_histogram_from_labels(prom_me
     r = prom_map_set(self->samples, l_value, sample);
     if (r) {
       prom_free((void *)l_value);
-      pthread_rwlock_unlock(self->rwlock);
+      prom_lock_unlock(self->lock);
       PROM_METRIC_SAMPLE_HISTOGRAM_FROM_LABELS_HANDLE_UNLOCK();
     }
   }
-  pthread_rwlock_unlock(self->rwlock);
+  prom_lock_unlock(self->lock);
   prom_free((void *)l_value);
   return sample;
 }

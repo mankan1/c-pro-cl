@@ -17,7 +17,6 @@
 #ifndef PROM_REGISTRY_T_H
 #define PROM_REGISTRY_T_H
 
-#include <pthread.h>
 #include <stdbool.h>
 
 // Public
@@ -27,6 +26,7 @@
 #include "prom_map_t.h"
 #include "prom_metric_formatter_t.h"
 #include "prom_string_builder_t.h"
+#include "prom_lock.h"
 
 struct prom_collector_registry {
   const char *name;
@@ -34,7 +34,7 @@ struct prom_collector_registry {
   prom_map_t *collectors;                    /**< Map of collectors keyed by name */
   prom_string_builder_t *string_builder;     /**< Enables string building */
   prom_metric_formatter_t *metric_formatter; /**< metric formatter for metric exposition on bridge call */
-  pthread_rwlock_t *lock;                    /**< mutex for safety against concurrent registration */
+  prom_lock_t *lock;                    /**< mutex for safety against concurrent registration */
 };
 
 #endif  // PROM_REGISTRY_T_H

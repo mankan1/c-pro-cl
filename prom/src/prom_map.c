@@ -108,8 +108,8 @@ prom_map_t *prom_map_new() {
     }
   }
 
-  self->rwlock = (pthread_rwlock_t *)prom_malloc(sizeof(pthread_rwlock_t));
-  r = pthread_rwlock_init(self->rwlock, NULL);
+  self->rwlock = (prom_lock_t *)prom_malloc(sizeof(prom_lock_t));
+  r = prom_lock_init(self->rwlock);
   if (r) {
     PROM_LOG(PROM_PTHREAD_RWLOCK_INIT_ERROR);
     prom_map_destroy(self);
@@ -136,13 +136,13 @@ int prom_map_destroy(prom_map_t *self) {
   prom_free(self->addrs);
   self->addrs = NULL;
 
-  r = pthread_rwlock_destroy(self->rwlock);
+  r = prom_lock_destroy(self->rwlock);
   if (r) {
     PROM_LOG(PROM_PTHREAD_RWLOCK_DESTROY_ERROR)
     ret = r;
   }
 
-  prom_free(self->rwlock);
+  prom_free((void*)self->rwlock);
   self->rwlock = NULL;
   prom_free(self);
   self = NULL;
@@ -201,14 +201,14 @@ static void *prom_map_get_internal(const char *key, size_t *size, size_t *max_si
 void *prom_map_get(prom_map_t *self, const char *key) {
   PROM_ASSERT(self != NULL);
   int r = 0;
-  r = pthread_rwlock_wrlock(self->rwlock);
+  r = prom_lock_lock(self->rwlock);
   if (r) {
     PROM_LOG(PROM_PTHREAD_RWLOCK_LOCK_ERROR);
     NULL;
   }
   void *payload =
       prom_map_get_internal(key, &self->size, &self->max_size, self->keys, self->addrs, self->free_value_fn);
-  r = pthread_rwlock_unlock(self->rwlock);
+  r = prom_lock_unlock(self->rwlock);
   if (r) {
     PROM_LOG(PROM_PTHREAD_RWLOCK_UNLOCK_ERROR);
     return NULL;
@@ -322,7 +322,7 @@ int prom_map_ensure_space(prom_map_t *self) {
 int prom_map_set(prom_map_t *self, const char *key, void *value) {
   PROM_ASSERT(self != NULL);
   int r = 0;
-  r = pthread_rwlock_wrlock(self->rwlock);
+  r = prom_lock_lock(self->rwlock);
   if (r) {
     PROM_LOG(PROM_PTHREAD_RWLOCK_LOCK_ERROR);
     return r;
@@ -331,7 +331,7 @@ int prom_map_set(prom_map_t *self, const char *key, void *value) {
   r = prom_map_ensure_space(self);
   if (r) {
     int rr = 0;
-    rr = pthread_rwlock_unlock(self->rwlock);
+    rr = prom_lock_unlock(self->rwlock);
     if (rr) {
       PROM_LOG(PROM_PTHREAD_RWLOCK_UNLOCK_ERROR);
       return rr;
@@ -343,7 +343,7 @@ int prom_map_set(prom_map_t *self, const char *key, void *value) {
                             true);
   if (r) {
     int rr = 0;
-    rr = pthread_rwlock_unlock(self->rwlock);
+    rr = prom_lock_unlock(self->rwlock);
     if (rr) {
       PROM_LOG(PROM_PTHREAD_RWLOCK_UNLOCK_ERROR);
       return rr;
@@ -351,7 +351,7 @@ int prom_map_set(prom_map_t *self, const char *key, void *value) {
       return r;
     }
   }
-  r = pthread_rwlock_unlock(self->rwlock);
+  r = prom_lock_unlock(self->rwlock);
   if (r) {
     PROM_LOG(PROM_PTHREAD_RWLOCK_UNLOCK_ERROR);
   }
@@ -388,14 +388,14 @@ int prom_map_delete(prom_map_t *self, const char *key) {
   PROM_ASSERT(self != NULL);
   int r = 0;
   int ret = 0;
-  r = pthread_rwlock_wrlock(self->rwlock);
+  r = prom_lock_lock(self->rwlock);
   if (r) {
     PROM_LOG(PROM_PTHREAD_RWLOCK_LOCK_ERROR);
     ret = r;
   }
   r = prom_map_delete_internal(key, &self->size, &self->max_size, self->keys, self->addrs, self->free_value_fn);
   if (r) ret = r;
-  r = pthread_rwlock_unlock(self->rwlock);
+  r = prom_lock_unlock(self->rwlock);
   if (r) {
     PROM_LOG(PROM_PTHREAD_RWLOCK_UNLOCK_ERROR);
     ret = r;

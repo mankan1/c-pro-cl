@@ -17,7 +17,7 @@
 #ifndef PROM_METRIC_T_H
 #define PROM_METRIC_T_H
 
-#include <pthread.h>
+#include "prom_lock.h"
 
 // Public
 #include "prom_histogram_buckets.h"
@@ -50,7 +50,7 @@ struct prom_metric {
   prom_histogram_buckets_t *buckets;  /**< buckets          Array of histogram bucket upper bound values */
   size_t label_key_count;             /**< label_keys_count The count of labe_keys*/
   prom_metric_formatter_t *formatter; /**< formatter        The metric formatter  */
-  pthread_rwlock_t *rwlock;           /**< rwlock           Required for locking on certain non-atomic operations */
+  prom_lock_t *lock;                  /**< lock             Required for locking on certain non-atomic operations */
   const char **label_keys;            /**< labels           Array comprised of const char **/
 };
 
