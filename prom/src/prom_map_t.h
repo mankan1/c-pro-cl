@@ -17,7 +17,7 @@
 #ifndef PROM_MAP_T_H
 #define PROM_MAP_T_H
 
-#include <pthread.h>
+#include "prom_lock.h"
 
 // Public
 #include "prom_map.h"
@@ -38,7 +38,7 @@ struct prom_map {
   size_t max_size;            /**< stores the current max_size */
   prom_linked_list_t *keys;   /**< linked list containing containing all keys present */
   prom_linked_list_t **addrs; /**< Sequence of linked lists. Each list contains nodes with the same index */
-  pthread_rwlock_t *rwlock;
+  prom_lock_t *rwlock;
   prom_map_node_free_value_fn free_value_fn;
 };
 

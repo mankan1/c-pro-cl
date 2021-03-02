@@ -32,12 +32,14 @@ struct promhttp_push_handle {
 prom_collector_registry_t *PROM_ACTIVE_REGISTRY;
 
 void* promhttp_post_metrics(void *arg) {
+    #define MAX_PROM_SLEEP 1000000
     promhttp_push_handle_t *handle = (promhttp_push_handle_t *)arg;
     while (handle->should_run) {
         unsigned long long now_ns = prom_get_clock_ns();
         unsigned long long elapsed_us = (now_ns - handle->last_posted_ns) / 1000;
         if (elapsed_us < handle->interval_us) {
-            usleep(handle->interval_us - elapsed_us);
+            unsigned long long tosleep = handle->interval_us - elapsed_us;
+            usleep(MAX_PROM_SLEEP < tosleep ? MAX_PROM_SLEEP : tosleep);
         } else {
             // time to emit metrics
             const char *buf = prom_collector_registry_bridge(PROM_ACTIVE_REGISTRY);

@@ -52,8 +52,8 @@ prom_collector_registry_t *prom_collector_registry_new(const char *name) {
 
   self->metric_formatter = prom_metric_formatter_new();
   self->string_builder = prom_string_builder_new();
-  self->lock = (pthread_rwlock_t *)prom_malloc(sizeof(pthread_rwlock_t));
-  r = pthread_rwlock_init(self->lock, NULL);
+  self->lock = (prom_lock_t *)prom_malloc(sizeof(prom_lock_t));
+  r = prom_lock_init(self->lock);
   if (r) {
     PROM_LOG("failed to initialize rwlock");
     return NULL;
@@ -116,8 +116,8 @@ int prom_collector_registry_destroy(prom_collector_registry_t *self) {
   self->string_builder = NULL;
   if (r) ret = r;
 
-  r = pthread_rwlock_destroy(self->lock);
-  prom_free(self->lock);
+  r = prom_lock_destroy(self->lock);
+  prom_free((void*)self->lock);
   self->lock = NULL;
   if (r) ret = r;
 
@@ -157,14 +157,14 @@ int prom_collector_registry_register_collector(prom_collector_registry_t *self, 
 
   int r = 0;
 
-  r = pthread_rwlock_wrlock(self->lock);
+  r = prom_lock_lock(self->lock);
   if (r) {
     PROM_LOG(PROM_PTHREAD_RWLOCK_LOCK_ERROR);
     return 1;
   }
   if (prom_map_get(self->collectors, collector->name) != NULL) {
     PROM_LOG("the given prom_collector_t* is already registered");
-    int rr = pthread_rwlock_unlock(self->lock);
+    int rr = prom_lock_unlock(self->lock);
     if (rr) {
       PROM_LOG(PROM_PTHREAD_RWLOCK_UNLOCK_ERROR);
       return rr;
@@ -174,7 +174,7 @@ int prom_collector_registry_register_collector(prom_collector_registry_t *self, 
   }
   r = prom_map_set(self->collectors, collector->name, collector);
   if (r) {
-    int rr = pthread_rwlock_unlock(self->lock);
+    int rr = prom_lock_unlock(self->lock);
     if (rr) {
       PROM_LOG(PROM_PTHREAD_RWLOCK_UNLOCK_ERROR);
       return rr;
@@ -182,7 +182,7 @@ int prom_collector_registry_register_collector(prom_collector_registry_t *self, 
       return r;
     }
   }
-  r = pthread_rwlock_unlock(self->lock);
+  r = prom_lock_unlock(self->lock);
   if (r) {
     PROM_LOG(PROM_PTHREAD_RWLOCK_UNLOCK_ERROR);
     return 1;
