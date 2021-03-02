@@ -2,13 +2,13 @@
 #define PROM_LOCK_H
 #include <pthread.h>
 
-#if USE_RWLOCKS == 1
+#if USE_SPINLOCK == 0
 
-typedef pthread_rwlock_t prom_lock_t;
-#define prom_lock_init(lock) pthread_rwlock_init(lock, NULL)
-#define prom_lock_lock(lock) pthread_rwlock_wrlock(lock)
-#define prom_lock_unlock(lock) pthread_rwlock_unlock(lock)
-#define prom_lock_destroy(lock) pthread_rwlock_destroy(lock)
+typedef pthread_mutex_t prom_lock_t;
+#define prom_lock_init(lock) pthread_mutex_init(lock, NULL)
+#define prom_lock_lock(lock) pthread_mutex_lock(lock)
+#define prom_lock_unlock(lock) pthread_mutex_unlock(lock)
+#define prom_lock_destroy(lock) pthread_mutex_destroy(lock)
 
 #else
 
